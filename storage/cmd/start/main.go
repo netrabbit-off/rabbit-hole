@@ -3,73 +3,23 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/netrabbit-off/rabbit-hole/internal/controllers"
 )
-
-type File struct {
-	ID      string `json:"id"`
-	Path    string `json:"path"`
-	Owner   string `json:"owner"`
-	Content string `json:"content"`
-}
-
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	var file *File
-	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	created, err := os.Create("data/" + file.Path)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	_, err = created.Write([]byte(file.Content))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func DownloadHandler(w http.ResponseWriter, r *http.Request) {
-	var file *File
-	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	content, err := os.ReadFile("data/" + file.Path)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Write([]byte(content))
-}
 
 func main() {
 	r := chi.NewRouter()
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		res, err := json.Marshal(map[string]string{"message": "xyu"})
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		res, err := json.Marshal(map[string]string{"message": "PONG"})
 		if err != nil {
 			return
 		}
 		w.Write(res)
 	})
 
-	r.Post("/upload", UploadHandler)
-	r.Post("/download", DownloadHandler)
+	r.Post("/upload", controllers.UploadHandler)
+	r.Post("/download", controllers.DownloadHandler)
 
 	http.ListenAndServe(":8080", r)
 }
