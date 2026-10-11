@@ -3,10 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
+	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
@@ -20,6 +20,7 @@ func NewController(repo *repository.Repository) *Controller {
 
 func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
+	// form file object
 	var file *models.File
 	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -27,21 +28,23 @@ func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	file.ID = id
+	content := helpers.DecodeB64(file.Content)
+	size := int64(len(content))
 
-	created, err := os.Create("data/" + file.ID)
-	if err != nil {
+	// save file in real storage
+	if err := helpers.CreateFile(file, content); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+
+	// save file in database
+	if err := c.repo.CreateFile(id, file.Path, size); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
-	_, err = created.Write([]byte(file.Content))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
+	// form response content
 	res, err := json.Marshal(map[string]string{"id": file.ID})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -61,13 +64,14 @@ func (c *Controller) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content, err := os.ReadFile("data/" + file.ID)
+	content, err := helpers.ReadFile(file.ID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	file.Content = string(content)
+
+	file.Content = helpers.EncodeB64(content)
 
 	res, err := json.Marshal(file)
 	if err != nil {

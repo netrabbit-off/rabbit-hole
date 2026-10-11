@@ -7,11 +7,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/netrabbit-off/rabbit-hole/internal/controllers"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
+	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
 func main() {
 	r := chi.NewRouter()
-	repo := repository.NewRepository(map[string]map[string]string{})
+	repo := repository.NewRepository(map[string]*models.File{})
 	controller := controllers.NewController(repo)
 
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
