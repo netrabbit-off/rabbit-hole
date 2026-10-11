@@ -12,7 +12,6 @@ export interface QuickAction {
 export interface FileItem {
     id: string;
     path: string;
-    name: string;
     owner: string;
     size: string;
     modifiedAt: string;
