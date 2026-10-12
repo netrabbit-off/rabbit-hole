@@ -27,3 +27,11 @@ func ReadFile(id string) ([]byte, error) {
 	}
 	return content, nil
 }
+
+func DeleteFile(id string) error {
+	err := os.Remove("data/" + id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

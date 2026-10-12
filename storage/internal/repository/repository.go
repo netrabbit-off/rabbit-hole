@@ -14,13 +14,13 @@ func NewRepository(db map[string]*models.File) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) CreateFile(id string, path string, size int64) error {
+func (r *Repository) CreateFile(id string, path string, fileType string, size int64) error {
 	r.DB[id] = &models.File{
 		ID:    id,
 		Path:  path,
 		Owner: "root",
 		Size:  size,
-		Type:  "file",
+		Type:  fileType,
 	}
 	return nil
 }
@@ -30,4 +30,8 @@ func (r *Repository) GetFile(id string) (*models.File, error) {
 		return res, nil
 	}
 	return nil, errors.New("not found")
+}
+
+func (r *Repository) DeleteItem(id string) {
+	delete(r.DB, id)
 }

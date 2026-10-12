@@ -16,7 +16,7 @@ func main() {
 	controller := controllers.NewController(repo)
 
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		res, err := json.Marshal(map[string]string{"message": "PONG"})
+		res, err := json.Marshal(repo.DB)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -26,7 +26,9 @@ func main() {
 	})
 
 	r.Post("/upload", controller.UploadHandler)
+	r.Post("/delete", controller.DeleteFileHandler)
 	r.Post("/download", controller.DownloadHandler)
+	r.Post("/create_folder", controller.CreateFolderHandler)
 
 	http.ListenAndServe(":8080", r)
 }
