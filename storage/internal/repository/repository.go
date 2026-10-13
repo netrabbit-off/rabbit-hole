@@ -4,6 +4,7 @@ import (
 	"errors"
 	"maps"
 	"slices"
+	"strings"
 
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
@@ -22,8 +23,10 @@ func (r *Repository) GetFiles() []*models.File {
 }
 
 func (r *Repository) CreateFile(id string, path string, fileType string, size int64) error {
+	pathSlice := strings.Split(path, "/")
 	r.DB[id] = &models.File{
 		ID:    id,
+		Name:  pathSlice[len(pathSlice)-1],
 		Path:  path,
 		Owner: "root",
 		Size:  size,

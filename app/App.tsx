@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { FileItem, QuickAction, StorageInfo } from './src/models/types';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -28,7 +28,13 @@ const MOCK_FILES: FileItem[] = [
 
 // ---------- Main screen (move to screens/Home/ later) ----------
 export default function App() {
-    const [files] = useState<FileItem[]>(MOCK_FILES);
+    const [files, setFiles] = useState<FileItem[]>(MOCK_FILES);
+
+    useEffect(() => {
+        fetch('http://localhost:8080/files')
+            .then((res) => res.json())
+            .then((json) => setFiles(json.data));
+    }, []);
 
     return <HomeScreen storage={MOCK_STORAGE} actions={MOCK_QUICK_ACTIONS} files={files} />;
 }
