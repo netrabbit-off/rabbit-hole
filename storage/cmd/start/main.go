@@ -25,6 +25,7 @@ func main() {
 		w.Write(res)
 	})
 
+	r.Get("/files", controller.GetFilesHandler)
 	r.Post("/upload", controller.UploadHandler)
 	r.Post("/delete", controller.DeleteFileHandler)
 	r.Post("/download", controller.DownloadHandler)

@@ -18,6 +18,16 @@ func NewController(repo *repository.Repository) *Controller {
 	return &Controller{repo: repo}
 }
 
+func (c *Controller) GetFilesHandler(w http.ResponseWriter, r *http.Request) {
+	if res, err := json.Marshal(map[string]any{"error": false, "data": c.repo.GetFiles()}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(res))
+	}
+}
+
 func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
 	// form file object

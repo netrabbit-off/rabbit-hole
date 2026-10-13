@@ -2,6 +2,8 @@ package repository
 
 import (
 	"errors"
+	"maps"
+	"slices"
 
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
@@ -12,6 +14,11 @@ type Repository struct {
 
 func NewRepository(db map[string]*models.File) *Repository {
 	return &Repository{DB: db}
+}
+
+func (r *Repository) GetFiles() []*models.File {
+	files := slices.Collect(maps.Values(r.DB))
+	return files
 }
 
 func (r *Repository) CreateFile(id string, path string, fileType string, size int64) error {
