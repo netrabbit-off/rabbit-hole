@@ -4,6 +4,8 @@
   "main": "node_modules/expo/AppEntry.js",
   "dependencies": {
     "expo": "~57.0.27",
+    "expo-intent-launcher": "~57.0.1",
+    "expo-sharing": "~57.0.23",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",

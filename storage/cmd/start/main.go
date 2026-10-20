@@ -40,7 +40,8 @@ func main() {
 	r.Post("/upload", controller.UploadHandler)
 	r.Post("/delete", controller.DeleteFileHandler)
 	r.Post("/download", controller.DownloadHandler)
+	r.Get("/files/{id}/download", controller.GetFileHandler)
 	r.Post("/create_folder", controller.CreateFolderHandler)
 
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":8088", r)
 }

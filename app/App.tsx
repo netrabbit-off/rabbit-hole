@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { FileItem, QuickAction, StorageInfo } from './src/models/types';
 import { HomeScreen } from './src/screens/HomeScreen';
+import apiClient from './src/api/apiClient';
 
 const MOCK_STORAGE: StorageInfo = {
     used: 47.3 * 1024 * 1024 * 1024,
@@ -31,8 +32,7 @@ export default function App() {
     const [files, setFiles] = useState<FileItem[]>(MOCK_FILES);
 
     useEffect(() => {
-        fetch('http://localhost:8080/files')
-            .then((res) => res.json())
+        apiClient.get("/files", {})
             .then((json) => setFiles(json.data));
     }, []);
 

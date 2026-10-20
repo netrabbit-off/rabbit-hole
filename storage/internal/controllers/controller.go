@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
 	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
@@ -23,6 +24,7 @@ func (c *Controller) GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	} else {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(res))
 	}
@@ -121,6 +123,11 @@ func (c *Controller) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(res)
+}
+
+func (c *Controller) GetFileHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	http.ServeFile(w, r, "data/"+id)
 }
 
 func (c *Controller) DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
