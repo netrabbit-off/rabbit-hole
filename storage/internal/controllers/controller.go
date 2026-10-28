@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -32,32 +35,38 @@ func (c *Controller) GetFilesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
-	// form file object
-	var file *models.File
-	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+	r.ParseMultipartForm(10 << 20)
+	rawFile, handler, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Ошибка получения файла: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	file.ID = id
-	content := helpers.DecodeB64(file.Content)
-	size := int64(len(content))
+	defer rawFile.Close()
 
-	// save file in real storage
-	if err := helpers.CreateFile(file, content); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	fileName := handler.Filename
+	dst, err := os.Create(filepath.Join("./data", id))
+	if err != nil {
+		http.Error(w, "Не удалось сохранить файл: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	// 4. Копируем содержимое загруженного файла в созданный файл
+	if _, err := io.Copy(dst, rawFile); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	size := handler.Size
 	// save file in database
-	if err := c.repo.CreateFile(id, file.Path, "file", size); err != nil {
+	if err := c.repo.CreateFile(id, fileName, "file", size); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
 	// form response content
-	res, err := json.Marshal(map[string]string{"id": file.ID})
+	res, err := json.Marshal(map[string]string{"id": id})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
