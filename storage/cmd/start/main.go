@@ -38,6 +38,7 @@ func main() {
 
 	r.Get("/files", controller.GetFilesHandler)
 	r.Post("/upload", controller.UploadHandler)
+	r.Post("/rename", controller.RenameFileHandler)
 	r.Post("/delete", controller.DeleteFileHandler)
 	r.Post("/download", controller.DownloadHandler)
 	r.Get("/files/{id}/download", controller.GetFileHandler)

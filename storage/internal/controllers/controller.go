@@ -43,7 +43,7 @@ func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rawFile.Close()
 
-	fileName := handler.Filename
+	fileName := r.URL.Query().Get("path") + handler.Filename
 	dst, err := os.Create(filepath.Join("./data", id))
 	if err != nil {
 		http.Error(w, "Не удалось сохранить файл: "+err.Error(), http.StatusInternalServerError)
@@ -137,6 +137,28 @@ func (c *Controller) DownloadHandler(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) GetFileHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	http.ServeFile(w, r, "data/"+id)
+}
+
+func (c *Controller) RenameFileHandler(w http.ResponseWriter, r *http.Request) {
+	var file *models.File
+	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	newFilename := file.Name
+
+	file, err := c.repo.GetFile(file.ID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	c.repo.RenameItem(file.ID, newFilename)
+	w.WriteHeader(http.StatusNoContent)
+
+	return
 }
 
 func (c *Controller) DeleteFileHandler(w http.ResponseWriter, r *http.Request) {

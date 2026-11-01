@@ -45,3 +45,7 @@ func (r *Repository) GetFile(id string) (*models.File, error) {
 func (r *Repository) DeleteItem(id string) {
 	delete(r.DB, id)
 }
+
+func (r *Repository) RenameItem(id string, newFilename string) {
+	r.DB[id].Name = newFilename
+}
