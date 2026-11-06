@@ -2,9 +2,9 @@ package repository
 
 import (
 	"errors"
+	"log"
 	"maps"
 	"slices"
-	"strings"
 
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
@@ -22,11 +22,10 @@ func (r *Repository) GetFiles() []*models.File {
 	return files
 }
 
-func (r *Repository) CreateFile(id string, path string, fileType string, size int64) error {
-	pathSlice := strings.Split(path, "/")
+func (r *Repository) CreateFile(id string, fileName string, path string, fileType string, size int64) error {
 	r.DB[id] = &models.File{
 		ID:    id,
-		Name:  pathSlice[len(pathSlice)-1],
+		Name:  fileName,
 		Path:  path,
 		Owner: "root",
 		Size:  size,
@@ -43,9 +42,54 @@ func (r *Repository) GetFile(id string) (*models.File, error) {
 }
 
 func (r *Repository) DeleteItem(id string) {
+	item := r.DB[id]
 	delete(r.DB, id)
+	if item.Type == "file" {
+		return
+	}
+
+	files := r.GetFiles()
+	for _, i := range files {
+		if i.Path == item.Path+item.Name+"/" {
+			r.DeleteItem(i.ID)
+		}
+	}
 }
 
 func (r *Repository) RenameItem(id string, newFilename string) {
+	log.Println("RenameItem called:", id, newFilename)
+	item := r.DB[id]
+	itemName := item.Name
 	r.DB[id].Name = newFilename
+	if item.Type == "file" {
+		return
+	}
+
+	files := r.GetFiles()
+	log.Println("  files count:", len(files))
+	for _, i := range files {
+		log.Println(i.Path, item.Path+itemName+"/", item.Path+newFilename+"/")
+		if i.Path == item.Path+itemName+"/" {
+			r.MoveItem(i.ID, item.Path+newFilename+"/")
+		}
+	}
+}
+
+func (r *Repository) MoveItem(id string, newPath string) {
+	log.Println("MoveItem called:", id, newPath)
+	item := r.DB[id]
+	itemPath := item.Path
+	r.DB[id].Path = newPath
+	if item.Type == "file" {
+		return
+	}
+
+	files := r.GetFiles()
+	log.Println("  files count:", len(files))
+	for _, i := range files {
+		log.Println(i.Path, itemPath+item.Name+"/", newPath+item.Name+"/")
+		if i.Path == itemPath+item.Name+"/" {
+			r.MoveItem(i.ID, newPath+item.Name+"/")
+		}
+	}
 }

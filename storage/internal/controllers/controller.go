@@ -43,7 +43,8 @@ func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rawFile.Close()
 
-	fileName := r.URL.Query().Get("path") + handler.Filename
+	fileName := handler.Filename
+	path := r.URL.Query().Get("path")
 	dst, err := os.Create(filepath.Join("./data", id))
 	if err != nil {
 		http.Error(w, "Не удалось сохранить файл: "+err.Error(), http.StatusInternalServerError)
@@ -59,7 +60,7 @@ func (c *Controller) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	size := handler.Size
 	// save file in database
-	if err := c.repo.CreateFile(id, fileName, "file", size); err != nil {
+	if err := c.repo.CreateFile(id, fileName, path, "file", size); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -89,7 +90,7 @@ func (c *Controller) CreateFolderHandler(w http.ResponseWriter, r *http.Request)
 	file.ID = id
 
 	// save file in database
-	if err := c.repo.CreateFile(id, file.Path, "folder", 0); err != nil {
+	if err := c.repo.CreateFile(id, file.Name, file.Path, "folder", 0); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
