@@ -28,8 +28,13 @@ func (c *Controller) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
 	c.repo.CreateUser(id, user.Login, user.Password)
 
+	res, _ := json.Marshal(&models.Response{
+		Token: "123",
+		Error: "false",
+	})
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(id))
+	w.Write([]byte(res))
 }
 
 func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -41,11 +46,20 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.repo.CheckLogin(user.Login, user.Password) {
+		res, _ := json.Marshal(&models.Response{
+			Token: "123",
+			Error: "false",
+		})
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("token"))
+		w.Write(res)
 		return
 	}
 
+	res, _ := json.Marshal(&models.Response{
+		Error:   "invalid_credentials",
+		Message: "Неправильный логин или пароль",
+	})
+
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Write([]byte("invalid_credentials"))
+	w.Write(res)
 }
