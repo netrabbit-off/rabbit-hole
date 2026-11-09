@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
+	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
@@ -31,21 +33,19 @@ func (c *Controller) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.NewString()
 	c.userRepo.CreateUser(id, user.Login, user.Password)
 
-	accessBytes := make([]byte, 32)
-	if _, err := rand.Read(accessBytes); err != nil {
+	accessToken, err := helpers.GenToken()
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error"))
 		return
 	}
-	accessToken := base64.URLEncoding.EncodeToString(accessBytes)
 
-	refreshBytes := make([]byte, 32)
-	if _, err := rand.Read(refreshBytes); err != nil {
+	refreshToken, err := helpers.GenToken()
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error"))
 		return
 	}
-	refreshToken := base64.URLEncoding.EncodeToString(refreshBytes)
 
 	if err := c.tokenRepo.CreateToken(r.Context(), accessToken, id, false); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -122,4 +122,51 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write(res)
+}
+
+func (c *Controller) CheckAuthHandler(w http.ResponseWriter, r *http.Request) {
+	token := strings.TrimPrefix(r.Header["Authorization"][0], "Bearer ")
+	println(token)
+	userID, err := c.tokenRepo.CheckToken(r.Context(), token)
+	if err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+
+	res, err := json.Marshal(&models.Response{
+		Message: userID,
+	})
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(res))
+}
+
+func (c *Controller) UpdateTokensHandler(w http.ResponseWriter, r *http.Request) {
+	req := &models.Response{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+	}
+
+	access, refresh, err := c.tokenRepo.RefreshTokens(r.Context(), req.RefreshToken)
+	if err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+	}
+
+	res, _ := json.Marshal(&models.Response{
+		AccessToken:  access,
+		RefreshToken: refresh,
+	})
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(res))
 }

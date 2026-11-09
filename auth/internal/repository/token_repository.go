@@ -8,6 +8,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 	"github.com/redis/go-redis/v9"
 )
@@ -54,17 +55,56 @@ func (r *TokenRepository) CreateToken(ctx context.Context, token string, userID 
 	return nil
 }
 
-func (r *TokenRepository) ParseToken(ctx context.Context, token string) (string, error) {
-	res, err := r.Redis.Get(ctx, "token:"+token).Result()
+func (r *TokenRepository) ParseToken(ctx context.Context, token string) (*models.Token, error) {
+	hash := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(hash[:])
+	res, err := r.Redis.Get(ctx, "token:"+tokenHash).Result()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	tokenData := &models.Token{}
 	if err := json.Unmarshal([]byte(res), &tokenData); err != nil {
-		return "", err
+		return nil, err
 	}
 
+	return tokenData, nil
+}
+
+func (r *TokenRepository) RefreshTokens(ctx context.Context, refreshToken string) (string, string, error) {
+	refreshData, err := r.ParseToken(ctx, refreshToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	if !refreshData.IsRefresh {
+		return "", "", errors.New("access token cannot be used to refresh tokens")
+	}
+
+	newAccess, err := helpers.GenToken()
+	if err != nil {
+		return "", "", err
+	}
+	newRefresh, err := helpers.GenToken()
+	if err != nil {
+		return "", "", err
+	}
+
+	if err := r.CreateToken(ctx, newAccess, refreshData.UserID, false); err != nil {
+		return "", "", err
+	}
+	if err := r.CreateToken(ctx, newRefresh, refreshData.UserID, true); err != nil {
+		return "", "", err
+	}
+
+	return newAccess, newRefresh, nil
+}
+
+func (r *TokenRepository) CheckToken(ctx context.Context, token string) (string, error) {
+	tokenData, err := r.ParseToken(ctx, token)
+	if err != nil {
+		return "", err
+	}
 	if tokenData.IsRefresh {
 		return "", errors.New("refresh token cannot be used to request")
 	}

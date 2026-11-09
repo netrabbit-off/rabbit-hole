@@ -27,7 +27,9 @@ func main() {
 	tokenRepo := repository.GetTokenRepository("127.0.0.1:6379", "", 0, 2)
 	controller := controllers.GetController(userRepo, tokenRepo)
 
+	r.Post("/update", controller.UpdateTokensHandler)
 	r.Post("/register", controller.RegisterHandler)
+	r.Get("/check", controller.CheckAuthHandler)
 	r.Post("/login", controller.LoginHandler)
 
 	http.ListenAndServe(":8089", r)
