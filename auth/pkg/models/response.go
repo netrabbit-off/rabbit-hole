@@ -1,7 +1,8 @@
 package models
 
 type Response struct {
-	Token   string `json:"token"`
-	Error   string `json:"error"`
-	Message string `json:"message"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Error        string `json:"error"`
+	Message      string `json:"message"`
 }

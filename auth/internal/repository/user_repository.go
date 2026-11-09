@@ -6,15 +6,15 @@ import (
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
-type Repository struct {
+type UserRepository struct {
 	DB map[string]*models.User
 }
 
-func GetRepository(DB map[string]*models.User) *Repository {
-	return &Repository{DB: DB}
+func GetUserRepository(DB map[string]*models.User) *UserRepository {
+	return &UserRepository{DB: DB}
 }
 
-func (r *Repository) CreateUser(id string, login string, password string) error {
+func (r *UserRepository) CreateUser(id string, login string, password string) error {
 	r.DB[id] = &models.User{
 		Login:    login,
 		Password: password,
@@ -22,7 +22,7 @@ func (r *Repository) CreateUser(id string, login string, password string) error 
 	return nil
 }
 
-func (r *Repository) CheckLogin(login string, password string) bool {
+func (r *UserRepository) CheckLogin(login string, password string) bool {
 	for i := range maps.Keys(r.DB) {
 		if r.DB[i].Login == login && r.DB[i].Password == password {
 			return true
