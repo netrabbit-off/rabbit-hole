@@ -36,7 +36,7 @@ func (r *TokenRepository) CreateToken(ctx context.Context, token string, userID 
 	tokenHash := hex.EncodeToString(hash[:])
 	var exp time.Duration
 	if isRefresh {
-		exp = 24 * time.Hour
+		exp = 24 * 30 * time.Hour
 	} else {
 		exp = 10 * time.Minute
 	}
@@ -97,6 +97,10 @@ func (r *TokenRepository) RefreshTokens(ctx context.Context, refreshToken string
 		return "", "", err
 	}
 
+	if err := r.DeleteToken(ctx, refreshToken); err != nil {
+		return "", "", err
+	}
+
 	return newAccess, newRefresh, nil
 }
 
@@ -110,4 +114,10 @@ func (r *TokenRepository) CheckToken(ctx context.Context, token string) (string,
 	}
 
 	return tokenData.UserID, nil
+}
+
+func (r *TokenRepository) DeleteToken(ctx context.Context, token string) error {
+	hash := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(hash[:])
+	return r.Redis.Del(ctx, "token:"+tokenHash).Err()
 }

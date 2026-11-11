@@ -152,6 +152,7 @@ func (c *Controller) UpdateTokensHandler(w http.ResponseWriter, r *http.Request)
 		})
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(res))
+		return
 	}
 
 	access, refresh, err := c.tokenRepo.RefreshTokens(r.Context(), req.RefreshToken)
@@ -161,6 +162,7 @@ func (c *Controller) UpdateTokensHandler(w http.ResponseWriter, r *http.Request)
 		})
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(res))
+		return
 	}
 
 	res, _ := json.Marshal(&models.Response{

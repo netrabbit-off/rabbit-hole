@@ -108,33 +108,6 @@ func (c *Controller) CreateFolderHandler(w http.ResponseWriter, r *http.Request)
 	w.Write([]byte(res))
 }
 
-func (c *Controller) DownloadHandler(w http.ResponseWriter, r *http.Request) {
-	var file *models.File
-	if err := json.NewDecoder(r.Body).Decode(&file); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	content, err := helpers.ReadFile(file.ID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	file.Content = helpers.EncodeB64(content)
-
-	res, err := json.Marshal(file)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Write(res)
-}
-
 func (c *Controller) GetFileHandler(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	http.ServeFile(w, r, "data/"+id)
