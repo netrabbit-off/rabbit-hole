@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/netrabbit-off/rabbit-hole/internal/controllers"
+	"github.com/netrabbit-off/rabbit-hole/internal/middleware"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
@@ -23,6 +24,8 @@ func main() {
 		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
+	r.Use(middleware.AuthMiddleware)
+
 	repo := repository.NewRepository(map[string]*models.File{})
 	controller := controllers.NewController(repo)
 

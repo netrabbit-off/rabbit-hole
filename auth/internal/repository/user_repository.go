@@ -22,11 +22,11 @@ func (r *UserRepository) CreateUser(id string, login string, password string) er
 	return nil
 }
 
-func (r *UserRepository) CheckLogin(login string, password string) bool {
+func (r *UserRepository) CheckLogin(login string, password string) string {
 	for i := range maps.Keys(r.DB) {
 		if r.DB[i].Login == login && r.DB[i].Password == password {
-			return true
+			return i
 		}
 	}
-	return false
+	return ""
 }

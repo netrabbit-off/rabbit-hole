@@ -61,6 +61,7 @@ func (c *Controller) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	res, _ := json.Marshal(&models.Response{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		Message:      id,
 		Error:        "false",
 	})
 
@@ -103,19 +104,20 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := json.Marshal(&models.Response{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		Error:        "false",
-	})
+	if userID := c.userRepo.CheckLogin(user.Login, user.Password); userID != "" {
+		res, _ := json.Marshal(&models.Response{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			Message:      userID,
+			Error:        "false",
+		})
 
-	if c.userRepo.CheckLogin(user.Login, user.Password) {
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
 		return
 	}
 
-	res, _ = json.Marshal(&models.Response{
+	res, _ := json.Marshal(&models.Response{
 		Error:   "invalid_credentials",
 		Message: "Неправильный логин или пароль",
 	})
@@ -125,8 +127,26 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) CheckAuthHandler(w http.ResponseWriter, r *http.Request) {
-	token := strings.TrimPrefix(r.Header["Authorization"][0], "Bearer ")
-	println(token)
+	header := r.Header["Authorization"]
+	if len(header) == 0 {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+	token := strings.TrimPrefix(header[0], "Bearer ")
+	if len(token) == 0 {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+	println("token: " + token)
+
 	userID, err := c.tokenRepo.CheckToken(r.Context(), token)
 	if err != nil {
 		res, _ := json.Marshal(&models.Response{
