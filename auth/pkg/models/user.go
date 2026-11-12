@@ -2,6 +2,6 @@ package models
 
 type User struct {
 	ID       string `json:"id"`
-	Login    string `json:"user"`
+	Login    string `json:"login"`
 	Password string `json:"password"`
 }

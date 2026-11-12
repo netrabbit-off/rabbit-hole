@@ -31,6 +31,8 @@ func main() {
 	r.Post("/register", controller.RegisterHandler)
 	r.Get("/check", controller.CheckAuthHandler)
 	r.Post("/login", controller.LoginHandler)
+	r.Get("/get_me", controller.GetMeHandler)
+	// r.Get("/user/{id}", controller.GetUserHandler)
 
 	http.ListenAndServe(":8089", r)
 }

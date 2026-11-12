@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"maps"
 
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
@@ -16,6 +17,7 @@ func GetUserRepository(DB map[string]*models.User) *UserRepository {
 
 func (r *UserRepository) CreateUser(id string, login string, password string) error {
 	r.DB[id] = &models.User{
+		ID:       id,
 		Login:    login,
 		Password: password,
 	}
@@ -29,4 +31,12 @@ func (r *UserRepository) CheckLogin(login string, password string) string {
 		}
 	}
 	return ""
+}
+
+func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
+	user, ex := r.DB[id]
+	if !ex {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }

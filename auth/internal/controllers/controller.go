@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
 	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
+	"github.com/netrabbit-off/rabbit-hole/pkg/utils"
 )
 
 type Controller struct {
@@ -127,17 +128,8 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) CheckAuthHandler(w http.ResponseWriter, r *http.Request) {
-	header := r.Header["Authorization"]
-	if len(header) == 0 {
-		res, _ := json.Marshal(&models.Response{
-			Error: "UNAUTHORIZED",
-		})
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(res))
-		return
-	}
-	token := strings.TrimPrefix(header[0], "Bearer ")
-	if len(token) == 0 {
+	token, err := utils.GetToken(r)
+	if err != nil {
 		res, _ := json.Marshal(&models.Response{
 			Error: "UNAUTHORIZED",
 		})
@@ -191,4 +183,52 @@ func (c *Controller) UpdateTokensHandler(w http.ResponseWriter, r *http.Request)
 	})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(res))
+}
+
+func (c *Controller) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	user, err := c.userRepo.GetUserByID(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Error"))
+		return
+	}
+
+	res, _ := json.Marshal(user)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(res))
+}
+
+func (c *Controller) GetMeHandler(w http.ResponseWriter, r *http.Request) {
+	token, err := utils.GetToken(r)
+	if err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+	userID, err := c.tokenRepo.CheckToken(r.Context(), token)
+	if err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "UNAUTHORIZED",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+	user, err := c.userRepo.GetUserByID(userID)
+	if err != nil {
+		res, _ := json.Marshal(&models.Response{
+			Error: "user not found",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(res))
+		return
+	}
+
+	res, _ := json.Marshal(user)
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }
