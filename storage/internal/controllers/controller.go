@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/netrabbit-off/rabbit-hole/internal/repository"
-	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
@@ -149,13 +148,7 @@ func (c *Controller) DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.repo.DeleteItem(file.ID)
-	if file.Type == "folder" {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	if err := helpers.DeleteFile(file.ID); err != nil {
+	if err := c.repo.DeleteItem(file.ID); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return

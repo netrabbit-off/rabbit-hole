@@ -6,6 +6,7 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/netrabbit-off/rabbit-hole/pkg/helpers"
 	"github.com/netrabbit-off/rabbit-hole/pkg/models"
 )
 
@@ -41,11 +42,16 @@ func (r *Repository) GetFile(id string) (*models.File, error) {
 	return nil, errors.New("not found")
 }
 
-func (r *Repository) DeleteItem(id string) {
+func (r *Repository) DeleteItem(id string) error {
 	item := r.DB[id]
 	delete(r.DB, id)
+
 	if item.Type == "file" {
-		return
+		err := helpers.DeleteFile(id)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	files := r.GetFiles()
@@ -54,6 +60,8 @@ func (r *Repository) DeleteItem(id string) {
 			r.DeleteItem(i.ID)
 		}
 	}
+
+	return nil
 }
 
 func (r *Repository) RenameItem(id string, newFilename string) {
