@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 
@@ -78,21 +76,31 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessBytes := make([]byte, 32)
-	if _, err := rand.Read(accessBytes); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error"))
+	userID := c.userRepo.CheckLogin(user.Login, user.Password)
+	if userID == "" {
+		res, _ := json.Marshal(&models.Response{
+			Error:   "invalid_credentials",
+			Message: "Неправильный логин или пароль",
+		})
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(res)
 		return
 	}
-	accessToken := base64.URLEncoding.EncodeToString(accessBytes)
+	user.ID = userID
 
-	refreshBytes := make([]byte, 32)
-	if _, err := rand.Read(refreshBytes); err != nil {
+	accessToken, err := helpers.GenToken()
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error"))
 		return
 	}
-	refreshToken := base64.URLEncoding.EncodeToString(refreshBytes)
+
+	refreshToken, err := helpers.GenToken()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error"))
+		return
+	}
 
 	if err := c.tokenRepo.CreateToken(r.Context(), accessToken, user.ID, false); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -105,25 +113,13 @@ func (c *Controller) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userID := c.userRepo.CheckLogin(user.Login, user.Password); userID != "" {
-		res, _ := json.Marshal(&models.Response{
-			AccessToken:  accessToken,
-			RefreshToken: refreshToken,
-			Message:      userID,
-			Error:        "false",
-		})
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(res)
-		return
-	}
-
 	res, _ := json.Marshal(&models.Response{
-		Error:   "invalid_credentials",
-		Message: "Неправильный логин или пароль",
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		Message:      userID,
+		Error:        "false",
 	})
-
-	w.WriteHeader(http.StatusUnauthorized)
+	w.WriteHeader(http.StatusOK)
 	w.Write(res)
 }
 
